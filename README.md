@@ -1,0 +1,15 @@
+# COSC 650 Socket Project
+
+This is the repository for the COSC 650 Socket project. This project aims to create a Java socket progam that does the following:
+
+* The server LS (localhost) listens on UDP port 13231. When the client starts, it asks the user to enter 3 values on a single line with a single space after each of the first two values. The 3 values are: psize (&lt; 1400), the number of bytes in every UDP packet (except possibly the last) that LS will send to the client; tout, the number of milliseconds the client will wait to receive the file from LS before sending a “fail” message; and sname, the name of a Web server to which LS will send a correct HTTP Get request. For example, the user input can be: 1400 5 c:\downloads\test.txt www.towson.edu
+
+* The client sends a message over UDP port 13231 to LS. The message only contains the 3 values psize and c:\test.txt
+
+* The client also sends a single correct HTTP Get request to the Web server with name sname. The Web server’s response should be identical to the html text in the page it returns to a Web browser when the browser sends this initial Get to the Web server. After all the page bytes sent by the Web server are received by the client, it prints the Web server name, the page size i.e., the total number of page bytes, and the total time to complete the request. The client uses separate threads to handle the Web server request and the LS request.
+
+* When LS gets the message from the client, it sends packets with the bytes of the file c:\downloads\test.txt over UDP port 13231 to the client. The packets are numbered 1, 2, … and each packet carries its packet number. The number of bytes in each packet except the last is psize, and the last packet has the remaining bytes (if any) in the file. The client sets the timeout to tout and waits to receive all the bytes in the file from LS over UDP port 13231.
+
+* Whenever the client receives a packet, it prints a message “rcvd packet n”, where n=1, 2, … is the packet number in the packet it received. If the client receives all the bytes in the file, it sends a single message “file OK” to LS on UDP port 13231. After all the file bytes are received, the client prints the text in the file it received. The page contents are printed in the correct order even if packets were received out of order. When the message “file OK” is received, LS prints the message “IP address OK”, where IP address is the IP address of the client. If all the bytes in the file are not received before the timeout tout expires, the client sends the message “fail” to LS on TCP port 13231.
+
+* If LS gets the message “fail”, it retransmits all the bytes (in packets as before) to the client. The client doubles the timeout tout and waits for LS to retransmit the file. LS only does ONE retransmission. If this ONE retransmission with the doubled tout fails (i.e., a “fail” is sent for the retransmission), both client and server print the message “quit”.
