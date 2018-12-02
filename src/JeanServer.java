@@ -1,6 +1,5 @@
 import java.net.*;
 import java.io.*;
-import java.nio.ByteBuffer;
 import java.util.HashMap;
 
 /**
@@ -65,9 +64,7 @@ class ServerRequestStream extends Thread {
       buffer[3] = (byte) (count);
       // Loop over the read until the buffer limit or EOF is reached, otherwise there is a chance that
       // there will be less packets in the buffer than the intended limit.
-      while ((read = stream.read(buffer, position, limit - position)) != -1 && (position += read) < max) {
-        position += read;
-      }
+      while ((read = stream.read(buffer, position, limit - position)) != -1 && (position += read) < max) {}
       DatagramPacket packet = new DatagramPacket(buffer, position, address, port);
       // When amount is -1, that means that EOF is reached.
       // Flip the bits of the fifth byte to indicate that this is the last send packet
@@ -76,10 +73,11 @@ class ServerRequestStream extends Thread {
         buffer[4] = 0b1111111;
         active = false;
       }
-      System.out.println(" SENDING: " + address.getHostAddress() + ":" + port + " " + count);
+      System.out.println("[SEND] " + address.getHostAddress() + ":" + port + " packet " + count + " " + packet.getLength() + " bytes");
       socket.send(packet);
       count++;
     }
+    System.out.println("[STOP] " + address.getHostAddress() + ":" + port);
   }
 }
 
@@ -263,16 +261,13 @@ class ServerThread extends Thread {
    */
   public void run() {
     System.out.println("Server running on localhost:13231");
-    System.out.println();
-    System.out.println("Process");
-    System.out.println("-------");
     while (running) {
       try {
         // Accept any new requests to the server.
         DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
         socket.receive(packet);
         ServerRequest request = new ServerRequest(packet);
-        System.out.println("RECEIVED: " + request.ID() + " " + request.getCommand());
+        System.out.println("[RECV] " + request.ID() + " " + request.getCommand());
         switch (request.getAction()) {
           case Success: this.success(request);
             break;
@@ -297,7 +292,7 @@ class ServerThread extends Thread {
     String identifier = request.ID();
     ServerRequestController controller = controllers.get(identifier);
     if (controller != null && !controller.retry()) {
-      System.out.println("    QUIT: " + controller.ID());
+      System.out.println("[QUIT] " + controller.ID());
       controllers.remove(identifier);
     }
   }
@@ -308,7 +303,7 @@ class ServerThread extends Thread {
    * @param request Request that was marked as a success.
    */
   private void success(ServerRequest request) {
-    System.out.println(request.getAddress().toString() + " address OK");
+    System.out.println("[SUCC] " + request.ID() + " address OK");
     controllers.remove(request.ID());
   }
 
